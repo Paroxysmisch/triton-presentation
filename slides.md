@@ -1,26 +1,24 @@
 ---
-theme: seriph
-background: https://cover.sli.dev
-title: Correctness-Driven Multi-Agent GPU Kernel Development
-info: |
-  Correctness-Driven Multi-Agent GPU Kernel Development System
-class: text-center
-drawings:
-  persist: false
-transition: slide-left
-comark: true
+theme: ./slidev-theme
+title: Correctness-Driven Multi-Agent GPU Kernel Optimization
+transition: morph
+themeConfig:
+  primary: '#6366f1'
+  secondary: '#06b6d4'
+  accent: '#f59e0b'
+  author: Yash Shah (ys562)
 ---
 
 # Correctness-Driven Multi-Agent GPU Kernel Optimization
 
-Yash Shah (ys562)
+Bridging the Optimization Gap with Adversarial Agents and Symbolic Verification
 
-<div @click="$slidev.nav.next" class="mt-12 py-1" hover:bg="white op-10">
-  Press Space for next page <carbon:arrow-right />
-</div>
+<style>
+.slidev-layout h1 {
+  font-size: clamp(40px, min(5vw, 8vh), 80px);
+}
+</style>
 
----
-transition: fade-out
 ---
 
 # The Challenge of GPU Kernel Development
@@ -34,15 +32,27 @@ Writing GPU kernels is **difficult and time consuming**, requiring:
 
 </v-clicks>
 
-<div v-click class="mt-8 p-4 rounded bg-green-500/10 border border-green-500/30">
+<div v-click class="glass mt-8 p-4">
 
 However, well-implemented kernels can yield speedups of **orders of magnitude**.
 
 </div>
 
 ---
+layout: section
+---
 
 # The Optimization Gap
+
+<style>
+.slidev-layout h1 {
+  font-size: clamp(36px, min(5vw, 8vh), 72px);
+}
+</style>
+
+---
+
+# Compilers Are Not Enough
 
 Compilers can perform some optimizations effectively, but **macro-level optimizations** like Flash Attention remain out of scope.
 
@@ -64,15 +74,11 @@ The key ideas behind Flash Attention are simple and **portable across other kern
 
 # Novel Hardware Compounds the Problem
 
-<div class="mt-4">
-
 By the time a compiler matures enough to effectively utilize new functional units, the **next generation of silicon is already shipping**.
 
-</div>
+<div v-click class="glass mt-8 p-6 text-center text-xl">
 
-<div v-click class="mt-8 p-6 rounded bg-red-500/10 border border-red-500/30 text-center text-xl">
-
-We are left with a <span v-mark.underline.red="2">massive optimization gap</span>.
+We are left with a <strong>massive optimization gap</strong>.
 
 </div>
 
@@ -89,33 +95,49 @@ LLMs and agent-based systems promise a way to **fill this optimization gap** by:
 
 </v-clicks>
 
-<div v-click class="mt-6 p-4 rounded bg-blue-500/10 border border-blue-500/30">
+<div v-click class="glass mt-6 p-4">
 
 We are **not** expecting the LLM to come up with completely new algorithms, but simply follow optimization engineering patterns an experienced kernel implementor would -- this alone is enough to give **substantial speedups**.
 
 </div>
 
 ---
+layout: section
+---
 
 # The Correctness Problem
+
+<style>
+.slidev-layout h1 {
+  font-size: clamp(36px, min(5vw, 8vh), 72px);
+}
+</style>
+
+---
+
+# Why Random Testing Falls Short
 
 While there has been some work in agent-based kernel development, one standout issue has been **verifying correctness**.
 
 <v-click>
 
-Some works (e.g. TritonBench) provide correctness guarantees via **random input testing**, however this does not cover edge cases.
+Some works (e.g. TritonBench<Ref n="1" />) provide correctness guarantees via **random input testing**, however this does not cover edge cases.
 
 </v-click>
 
-<div v-click class="mt-4 p-4 rounded bg-yellow-500/10 border border-yellow-500/30">
+<div v-click class="glass mt-4 p-4">
 
 **Example:** If we pick random inputs for a softmax kernel between [0, 1], the kernel may seem to pass, but may have **numerical stability issues**.
 
 </div>
 
+<Footnote n="1">TritonBench: arxiv.org/abs/2502.14752</Footnote>
+
 ---
 
 # Example: PyTorch Reference
+
+<p class="micro-label">Reference Implementation</p>
 
 A correct softmax with numerical stability:
 
@@ -133,9 +155,15 @@ def softmax(x: torch.Tensor) -> torch.Tensor:
     return exp_x / sum_exp
 ```
 
+<style>
+.slidev-layout pre { font-size: 0.8em; }
+</style>
+
 ---
 
 # Example: Correct Triton Kernel
+
+<p class="micro-label">Reference</p>
 
 ```python {all|12-14|all}
 @triton.jit
@@ -159,15 +187,17 @@ def softmax_kernel(
     tl.store(output_ptrs, softmax_output, mask=mask)
 ```
 
-<div class="mt-2 text-sm opacity-75">
-
 Key: subtracts `row_max` before `exp()` for numerical stability.
 
-</div>
+<style>
+.slidev-layout pre { font-size: 0.72em; }
+</style>
 
 ---
 
 # Example: Buggy Kernel
+
+<p class="micro-label">Bug Introduced</p>
 
 ```python {all|13-14|all}
 @triton.jit
@@ -191,38 +221,80 @@ def softmax_kernel_optimized(
     tl.store(output_ptrs, softmax_output, mask=mask)
 ```
 
-<div v-click class="mt-2 p-3 rounded bg-red-500/10 border border-red-500/30 text-sm">
-
-With random inputs in [0, 1], `exp(row)` won't overflow -- the bug **passes random testing**. But with large values, `exp(row)` overflows to `inf`, producing `NaN` outputs.
-
-</div>
+<style>
+.slidev-layout pre { font-size: 0.72em; }
+</style>
 
 ---
 
-# Our Approach: Adversarial Multi-Agent System
+# Why This Bug Escapes Random Testing
+
+<div class="glass p-4">
+
+With random inputs in **[0, 1]**, `exp(row)` won't overflow -- the bug **passes random testing**.
+
+But with large values, `exp(row)` overflows to `inf`, producing **NaN** outputs.
+
+</div>
+
+<v-click>
+
+<p class="micro-label mt-8">The core issue</p>
+
+Random input testing samples from a **benign distribution**. Bugs that only manifest at boundary conditions or with adversarial inputs go undetected.
+
+</v-click>
+
+---
+layout: section
+---
+
+# Our Approach
+
+<style>
+.slidev-layout h1 {
+  font-size: clamp(36px, min(5vw, 8vh), 72px);
+}
+</style>
+
+---
+layout: statement
+---
+
+# An adversarial multi-agent system where an optimizer and a correctness agent work against each other
+
+<style>
+.slidev-layout h1 {
+  font-size: clamp(28px, min(3.5vw, 6vh), 56px);
+}
+</style>
+
+---
+
+# Adversarial Multi-Agent System
 
 <v-clicks>
 
-- We introduce a multi-agent system with an **optimizer agent system** and a **correctness agent system** that are <span v-mark.circle.red="3">adversarial</span>
+- We introduce a multi-agent system with an **optimizer agent system** and a **correctness agent system** that are **adversarial**
 - The correctness agent system tries to find a **counter-example** such that the optimized kernel produces an output that differs from a reference, unoptimized version
 
 </v-clicks>
 
-<div v-click class="mt-6">
-
-```mermaid {scale: 0.7}
-graph LR
-    O[Optimizer Agent System] -->|optimized kernel| C[Correctness Agent System]
-    C -->|counter-example / approval| O
-    style O fill:#4a9eff,color:#fff
-    style C fill:#ff4a4a,color:#fff
-```
-
-</div>
-
+---
+layout: section
 ---
 
 # Correctness Agent System
+
+<style>
+.slidev-layout h1 {
+  font-size: clamp(36px, min(5vw, 8vh), 72px);
+}
+</style>
+
+---
+
+# Correctness Agent: Overview
 
 <v-clicks>
 
@@ -235,8 +307,20 @@ graph LR
 </v-clicks>
 
 ---
+layout: section
+---
 
 # Optimizer Agent System
+
+<style>
+.slidev-layout h1 {
+  font-size: clamp(36px, min(5vw, 8vh), 72px);
+}
+</style>
+
+---
+
+# Optimizer Agent: Overview
 
 <v-clicks>
 
@@ -248,13 +332,16 @@ graph LR
 
 </v-clicks>
 
-
 ---
-layout: center
-class: text-center
+layout: end
 ---
 
 # Thank You
 
 Yash Shah (ys562)
 
+<style>
+.slidev-layout h1 {
+  font-size: clamp(36px, min(5vw, 8vh), 72px);
+}
+</style>

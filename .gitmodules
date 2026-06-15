@@ -1,0 +1,3 @@
+[submodule "slidev-theme"]
+	path = slidev-theme
+	url = git@github.com:Paroxysmisch/slidev-theme.git
