@@ -11,7 +11,7 @@ themeConfig:
 
 # Correctness-Driven Multi-Agent GPU Kernel Optimization
 
-Bridging the Optimization Gap with Adversarial Agents and Symbolic Verification
+Bridging the Optimization Gap with Multiple LLM Agents and Symbolic Verification
 
 <style>
 .slidev-layout h1 {
@@ -32,7 +32,7 @@ Writing GPU kernels is **difficult and time consuming**, requiring:
 
 </v-clicks>
 
-<div v-click class="glass mt-8 p-4">
+<div v-click class="glass mt-8 p-4 text-center">
 
 However, well-implemented kernels can yield speedups of **orders of magnitude**.
 
@@ -156,7 +156,7 @@ def softmax(x: torch.Tensor) -> torch.Tensor:
 ```
 
 <style>
-.slidev-layout pre { font-size: 0.8em; }
+.slidev-layout { --slidev-code-font-size: 10px; --slidev-code-line-height: 14px; }
 </style>
 
 ---
@@ -190,7 +190,7 @@ def softmax_kernel(
 Key: subtracts `row_max` before `exp()` for numerical stability.
 
 <style>
-.slidev-layout pre { font-size: 0.72em; }
+.slidev-layout { --slidev-code-font-size: 10px; --slidev-code-line-height: 14px; }
 </style>
 
 ---
@@ -222,7 +222,7 @@ def softmax_kernel_optimized(
 ```
 
 <style>
-.slidev-layout pre { font-size: 0.72em; }
+.slidev-layout { --slidev-code-font-size: 10px; --slidev-code-line-height: 14px; }
 </style>
 
 ---
@@ -261,7 +261,7 @@ layout: section
 layout: statement
 ---
 
-# An adversarial multi-agent system where an optimizer and a correctness agent work against each other
+# An multi-agent system consisting of an optimizer and a correctness agent system
 
 <style>
 .slidev-layout h1 {
@@ -271,11 +271,11 @@ layout: statement
 
 ---
 
-# Adversarial Multi-Agent System
+# A Multi-Agent System
 
 <v-clicks>
 
-- We introduce a multi-agent system with an **optimizer agent system** and a **correctness agent system** that are **adversarial**
+- We introduce a multi-agent system with an **optimizer agent system** and a **correctness agent system**
 - The correctness agent system tries to find a **counter-example** such that the optimized kernel produces an output that differs from a reference, unoptimized version
 
 </v-clicks>
